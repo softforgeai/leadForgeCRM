@@ -45,12 +45,12 @@ export function MobileNav({ children }: { children: ReactNode }) {
             className="absolute inset-0 bg-black/40"
             onClick={() => setOpen(false)}
           />
-          <div className="absolute inset-y-0 left-0 flex w-72 max-w-[85vw] flex-col border-r border-line bg-surface p-4">
+          <div className="absolute inset-y-0 left-0 w-72 max-w-[85vw] bg-sidebar shadow-xl">
             <button
               type="button"
               onClick={() => setOpen(false)}
               aria-label="Close menu"
-              className="mb-2 inline-flex size-9 items-center justify-center self-end rounded-lg text-muted hover:bg-surface-2"
+              className="absolute top-3 right-3 z-10 inline-flex size-9 items-center justify-center rounded-lg text-sidebar-muted hover:bg-sidebar-hover hover:text-sidebar-fg"
             >
               <X aria-hidden className="size-5" />
             </button>

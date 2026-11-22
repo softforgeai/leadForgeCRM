@@ -3,18 +3,25 @@
 @custom-variant dark (&:where([data-theme="dark"], [data-theme="dark"] *));
 
 :root {
-  --bg: #f7f7f9;
+  --bg: #f3f5f8;
   --surface: #ffffff;
-  --surface-2: #f1f2f5;
-  --fg: #12131a;
-  --muted: #5b5f6e;
-  --subtle: #757987;
-  --line: #e4e5ea;
-  --line-strong: #cfd1d9;
-  --accent: #4f46e5;
+  --surface-2: #f1f4f8;
+  --fg: #111827;
+  --muted: #4b5563;
+  --subtle: #6b7280;
+  --line: #e2e6ed;
+  --line-strong: #cdd3dd;
+  --accent: #2563eb;
   --accent-fg: #ffffff;
-  --accent-soft: #eef0ff;
-  --accent-text: #4338ca;
+  --accent-soft: #eaf1fe;
+  --accent-text: #1d4ed8;
+  /* The sidebar stays dark in both themes, like most CRMs. */
+  --sidebar: #111827;
+  --sidebar-hover: #1f2937;
+  --sidebar-active: #253248;
+  --sidebar-fg: #f3f4f6;
+  --sidebar-muted: #9ca3af;
+  --sidebar-line: #263142;
   --success: #15803d;
   --success-soft: #e8f6ec;
   --warning: #b45309;
@@ -25,18 +32,24 @@
 }
 
 [data-theme="dark"] {
-  --bg: #0c0d12;
-  --surface: #14151c;
-  --surface-2: #1b1d26;
-  --fg: #ecedf2;
-  --muted: #a3a6b4;
-  --subtle: #858899;
-  --line: #262833;
-  --line-strong: #353846;
-  --accent: #6d66f0;
+  --bg: #0b0f17;
+  --surface: #121823;
+  --surface-2: #19202d;
+  --fg: #e8ebf1;
+  --muted: #a2aab8;
+  --subtle: #8690a1;
+  --line: #232b39;
+  --line-strong: #323c4d;
+  --accent: #3b82f6;
   --accent-fg: #ffffff;
-  --accent-soft: #1f1d3d;
-  --accent-text: #a8a3ff;
+  --accent-soft: #15233d;
+  --accent-text: #8db4ff;
+  --sidebar: #0a0e15;
+  --sidebar-hover: #151b26;
+  --sidebar-active: #1c2535;
+  --sidebar-fg: #e8ebf1;
+  --sidebar-muted: #8690a1;
+  --sidebar-line: #1c2431;
   --success: #4ade80;
   --success-soft: #12261a;
   --warning: #fbbf24;
@@ -65,6 +78,12 @@
   --color-warning-soft: var(--warning-soft);
   --color-danger: var(--danger);
   --color-danger-soft: var(--danger-soft);
+  --color-sidebar: var(--sidebar);
+  --color-sidebar-hover: var(--sidebar-hover);
+  --color-sidebar-active: var(--sidebar-active);
+  --color-sidebar-fg: var(--sidebar-fg);
+  --color-sidebar-muted: var(--sidebar-muted);
+  --color-sidebar-line: var(--sidebar-line);
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
 }
@@ -72,6 +91,12 @@
 body {
   background: var(--bg);
   color: var(--fg);
+}
+
+/* Slim, unobtrusive scrollbars for inner scroll areas (board, columns). */
+.scroll-thin {
+  scrollbar-width: thin;
+  scrollbar-color: var(--line-strong) transparent;
 }
 
 :focus-visible {

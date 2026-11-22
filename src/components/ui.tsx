@@ -91,7 +91,7 @@ export function Field({
 }
 
 export function Card({ className, ...props }: ComponentProps<"div">) {
-  return <div className={cn("rounded-xl border border-line bg-surface", className)} {...props} />;
+  return <div className={cn("rounded-xl border border-line bg-surface shadow-[0_1px_2px_rgba(16,24,40,0.04)]", className)} {...props} />;
 }
 
 type Tone = "neutral" | "accent" | "success" | "warning" | "danger";
@@ -124,7 +124,7 @@ export function PageTitle({ title, description, actions }: { title: string; desc
   return (
     <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
       <div>
-        <h1 className="text-2xl font-semibold tracking-tight text-fg">{title}</h1>
+        <h1 className="text-xl font-semibold tracking-tight text-fg">{title}</h1>
         {description && <p className="mt-1 text-sm text-muted">{description}</p>}
       </div>
       {actions && <div className="flex flex-wrap gap-2">{actions}</div>}
@@ -157,8 +157,9 @@ export function Avatar({ name, className }: { name: string; className?: string }
     <span
       aria-hidden
       className={cn(
-        "inline-flex size-7 shrink-0 items-center justify-center rounded-full bg-accent-soft text-[11px] font-semibold text-accent-text",
-        className,
+        "inline-flex shrink-0 items-center justify-center rounded-full bg-accent-soft font-semibold text-accent-text",
+        // Size and font size come as a pair, either from the caller or this default.
+        className ?? "size-7 text-[11px]",
       )}
     >
       {letters || "?"}

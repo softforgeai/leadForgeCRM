@@ -16,7 +16,9 @@ export function LeadForm({
   members,
   canAssign,
   currentUserId,
+  defaultStageId,
 }: {
+  defaultStageId?: string;
   lead?: Lead;
   stages: Option[];
   members: Option[];
@@ -47,7 +49,7 @@ export function LeadForm({
           <Input id="phone" name="phone" type="tel" defaultValue={lead?.phone ?? ""} />
         </Field>
         <Field label="Stage" htmlFor="stageId" error={err("stageId")}>
-          <Select id="stageId" name="stageId" defaultValue={lead?.stage_id ?? stages[0]?.value}>
+          <Select id="stageId" name="stageId" defaultValue={lead?.stage_id ?? defaultStageId ?? stages[0]?.value}>
             {stages.map((s) => (
               <option key={s.value} value={s.value}>
                 {s.label}

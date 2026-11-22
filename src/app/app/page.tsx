@@ -1,9 +1,10 @@
 import Link from "next/link";
-import { Plus } from "lucide-react";
+import { Plus, Target, Trophy, UserPlus, Wallet } from "lucide-react";
 import { ButtonLink, Card, EmptyState, PageTitle } from "@/components/ui";
 import { requireWorkspace } from "@/lib/auth";
 import { getDashboardData } from "@/lib/data";
 import { formatMoney } from "@/lib/format";
+import { FALLBACK_COLOR, stageColors } from "@/lib/stage-colors";
 import { SOURCE_LABELS } from "@/lib/validation";
 
 export const metadata = { title: "Dashboard" };
@@ -13,6 +14,7 @@ export default async function DashboardPage() {
   const data = await getDashboardData(ctx.workspace.id);
   const scope = ctx.isManager ? "Team" : "Your";
   const maxStage = Math.max(1, ...data.byStage.map((s) => s.count));
+  const colors = stageColors(data.byStage.map((s) => s.stage));
   const maxSource = Math.max(1, ...data.bySource.map((s) => s.count));
 
   return (
@@ -43,14 +45,32 @@ export default async function DashboardPage() {
       ) : (
         <>
           <dl className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-            <Stat label={`${scope} open pipeline`} value={formatMoney(data.pipelineValue)} />
-            <Stat label="Won" value={formatMoney(data.wonValue)} />
+            <Stat
+              label={`${scope} open pipeline`}
+              value={formatMoney(data.pipelineValue)}
+              icon={Wallet}
+              tone="bg-sky-100 text-sky-700 dark:bg-sky-500/15 dark:text-sky-300"
+            />
+            <Stat
+              label="Won revenue"
+              value={formatMoney(data.wonValue)}
+              icon={Trophy}
+              tone="bg-emerald-100 text-emerald-700 dark:bg-emerald-500/15 dark:text-emerald-300"
+            />
             <Stat
               label="Win rate"
               value={data.winRate === null ? "—" : `${Math.round(data.winRate * 100)}%`}
               hint="Won ÷ (won + lost)"
+              icon={Target}
+              tone="bg-violet-100 text-violet-700 dark:bg-violet-500/15 dark:text-violet-300"
             />
-            <Stat label="New leads this month" value={String(data.newThisMonth)} hint={`${data.totalLeads} in total`} />
+            <Stat
+              label="New leads this month"
+              value={String(data.newThisMonth)}
+              hint={`${data.totalLeads} in total`}
+              icon={UserPlus}
+              tone="bg-amber-100 text-amber-700 dark:bg-amber-500/15 dark:text-amber-300"
+            />
           </dl>
 
           <div className="grid gap-4 lg:grid-cols-3">
@@ -68,9 +88,7 @@ export default async function DashboardPage() {
                       </div>
                       <div className="mt-1.5 h-2 overflow-hidden rounded-full bg-surface-2">
                         <div
-                          className={
-                            stage.kind === "won" ? "h-full bg-success" : stage.kind === "lost" ? "h-full bg-subtle" : "h-full bg-accent"
-                          }
+                          className={`h-full rounded-full ${(colors.get(stage.id) ?? FALLBACK_COLOR).fill}`}
                           style={{ width: `${(count / maxStage) * 100}%` }}
                         />
                       </div>
@@ -141,12 +159,29 @@ export default async function DashboardPage() {
   );
 }
 
-function Stat({ label, value, hint }: { label: string; value: string; hint?: string }) {
+function Stat({
+  label,
+  value,
+  hint,
+  icon: Icon,
+  tone,
+}: {
+  label: string;
+  value: string;
+  hint?: string;
+  icon: typeof Wallet;
+  tone: string;
+}) {
   return (
-    <Card className="p-5">
-      <dt className="text-sm text-muted">{label}</dt>
-      <dd className="mt-2 text-2xl font-semibold tabular-nums tracking-tight">{value}</dd>
-      {hint && <dd className="mt-1 text-xs text-subtle">{hint}</dd>}
+    <Card className="flex items-start gap-4 p-5">
+      <span className={`inline-flex size-10 shrink-0 items-center justify-center rounded-lg ${tone}`}>
+        <Icon aria-hidden className="size-5" />
+      </span>
+      <div className="min-w-0">
+        <dt className="text-sm text-muted">{label}</dt>
+        <dd className="mt-1 text-2xl font-semibold tracking-tight tabular-nums">{value}</dd>
+        {hint && <dd className="mt-0.5 text-xs text-subtle">{hint}</dd>}
+      </div>
     </Card>
   );
 }

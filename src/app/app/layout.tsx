@@ -2,49 +2,57 @@ import { Suspense } from "react";
 import { DemoBanner } from "@/components/app/DemoBanner";
 import { Sidebar } from "@/components/app/Sidebar";
 import { TimezoneCookie } from "@/components/app/TimezoneCookie";
-import { Skeleton } from "@/components/ui";
+import { TopBar } from "@/components/app/TopBar";
 import { requireWorkspace } from "@/lib/auth";
 import { countDueFollowUps, getUserTimeZone } from "@/lib/data";
 
+/**
+ * App shell: the sidebar and top bar stay fixed and only <main> scrolls, so
+ * wide content (the pipeline board, tables) never scrolls the whole page.
+ *
+ * Pages that mark an element with `data-fullbleed` (the pipeline) get the full
+ * width and height of the content area instead of the centred container.
+ */
 export default function AppLayout({ children }: LayoutProps<"/app">) {
   return (
-    <div className="flex min-h-dvh flex-col lg:flex-row">
-      <Suspense fallback={<SidebarFallback />}>
-        <Shell />
+    <div className="flex h-dvh overflow-hidden bg-bg">
+      <Suspense fallback={<div className="hidden w-60 shrink-0 bg-sidebar lg:block" />}>
+        <SidebarSlot />
       </Suspense>
-      <div className="min-w-0 flex-1">
+      <div className="flex min-w-0 flex-1 flex-col">
+        <Suspense fallback={<div className="h-14 shrink-0 border-b border-line bg-surface" />}>
+          <TopBarSlot />
+        </Suspense>
         <Suspense fallback={null}>
           <DemoBanner />
         </Suspense>
-        <main className="mx-auto w-full max-w-7xl px-4 py-6 sm:px-6 lg:px-8 lg:py-8">{children}</main>
+        <main className="scroll-thin min-h-0 flex-1 overflow-x-hidden overflow-y-auto">
+          <div className="mx-auto w-full max-w-7xl px-4 py-6 sm:px-6 lg:px-8 has-[[data-fullbleed]]:h-full has-[[data-fullbleed]]:max-w-none has-[[data-fullbleed]]:py-5">
+            {children}
+          </div>
+        </main>
       </div>
     </div>
   );
 }
 
-async function Shell() {
+async function loadShell() {
   const ctx = await requireWorkspace();
-  const [dueCount, { fromCookie }] = await Promise.all([
-    countDueFollowUps(ctx.workspace.id, ctx.userId),
-    getUserTimeZone(),
-  ]);
-  return (
-    <>
-      <TimezoneCookie current={fromCookie} />
-      <Sidebar ctx={ctx} dueCount={dueCount} />
-    </>
-  );
+  const [dueCount, tz] = await Promise.all([countDueFollowUps(ctx.workspace.id, ctx.userId), getUserTimeZone()]);
+  return { ctx, dueCount, tz };
 }
 
-function SidebarFallback() {
+async function SidebarSlot() {
+  const { ctx, dueCount } = await loadShell();
+  return <Sidebar ctx={ctx} dueCount={dueCount} />;
+}
+
+async function TopBarSlot() {
+  const { ctx, dueCount, tz } = await loadShell();
   return (
     <>
-      <div className="hidden h-dvh w-64 shrink-0 space-y-3 border-r border-line bg-surface p-4 lg:block">
-        <Skeleton className="h-6 w-28" />
-        <Skeleton className="h-9" />
-        <Skeleton className="mt-6 h-48" />
-      </div>
-      <div className="h-14 border-b border-line bg-surface lg:hidden" />
+      <TimezoneCookie current={tz.fromCookie} />
+      <TopBar ctx={ctx} dueCount={dueCount} />
     </>
   );
 }

@@ -113,7 +113,7 @@ export async function getBoardLeads(workspaceId: string) {
   const supabase = await createClient();
   const { data, error } = await supabase
     .from("leads")
-    .select("id, name, company, value_cents, stage_id, assigned_to, tags, updated_at")
+    .select("id, name, company, email, phone, source, value_cents, stage_id, assigned_to, tags, updated_at")
     .eq("workspace_id", workspaceId)
     .order("updated_at", { ascending: false })
     .limit(1000);

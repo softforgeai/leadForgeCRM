@@ -1,13 +1,82 @@
 "use client";
 
-import { useActionState, useEffect, useRef, useState } from "react";
+import { useActionState, useEffect, useOptimistic, useRef, useState, useTransition } from "react";
 import { ArrowRightLeft, CircleCheck, Mail, MessageSquare, Phone, Plus, Sparkles, UserRound } from "lucide-react";
-import { addActivity, createFollowUp, toggleFollowUp } from "@/app/app/actions/leads";
+import { addActivity, createFollowUp, moveLead, toggleFollowUp } from "@/app/app/actions/leads";
 import { SubmitButton } from "@/components/SubmitButton";
 import { Alert, Field, Input, Select, Textarea } from "@/components/ui";
 import { cn } from "@/lib/cn";
 import type { Activity, FollowUp } from "@/lib/database.types";
 import { formatDate, formatRelative } from "@/lib/format";
+
+type PathStage = { id: string; name: string; kind: "open" | "won" | "lost" };
+
+/**
+ * Stage progress bar across the top of the lead page. Click a step to move the
+ * lead there. Won and Lost are shown together as the closing step.
+ */
+export function StagePath({
+  leadId,
+  currentStageId,
+  stages,
+}: {
+  leadId: string;
+  currentStageId: string;
+  stages: PathStage[];
+}) {
+  const [optimisticStage, setOptimisticStage] = useOptimistic(currentStageId);
+  const [pending, startTransition] = useTransition();
+  const [error, setError] = useState<string | null>(null);
+  const currentIndex = stages.findIndex((s) => s.id === optimisticStage);
+  const current = stages[currentIndex];
+
+  function go(stageId: string) {
+    if (stageId === optimisticStage) return;
+    setError(null);
+    startTransition(async () => {
+      setOptimisticStage(stageId);
+      const result = await moveLead(leadId, stageId);
+      if (result && !result.ok) setError(result.error ?? "We couldn't move this lead.");
+    });
+  }
+
+  return (
+    <div className="space-y-2">
+      <ol aria-label="Pipeline stage" className="flex overflow-x-auto rounded-xl border border-line bg-surface p-1 scroll-thin" aria-busy={pending}>
+        {stages.map((s, i) => {
+          const isCurrent = s.id === optimisticStage;
+          const done = current?.kind === "open" ? i < currentIndex : current?.kind === "won" ? s.kind !== "lost" : false;
+          const tone = isCurrent
+            ? s.kind === "won"
+              ? "bg-success text-white"
+              : s.kind === "lost"
+                ? "bg-danger text-white"
+                : "bg-accent text-accent-fg"
+            : done
+              ? "bg-accent-soft text-accent-text"
+              : "text-muted hover:bg-surface-2 hover:text-fg";
+          return (
+            <li key={s.id} className="min-w-28 flex-1">
+              <button
+                type="button"
+                onClick={() => go(s.id)}
+                aria-current={isCurrent ? "step" : undefined}
+                className={cn(
+                  "flex w-full items-center justify-center gap-1.5 rounded-lg px-3 py-2 text-sm font-medium whitespace-nowrap transition-colors",
+                  tone,
+                )}
+              >
+                {done && !isCurrent && <CircleCheck aria-hidden className="size-3.5" />}
+                {s.name}
+              </button>
+            </li>
+          );
+        })}
+      </ol>
+      {error && <Alert>{error}</Alert>}
+    </div>
+  );
+}
 
 const TYPES = [
   { value: "note", label: "Note", icon: MessageSquare },

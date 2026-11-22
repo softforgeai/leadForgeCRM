@@ -38,15 +38,16 @@ test("a lead can be created, noted and moved", async ({ page }) => {
   await expect(page.getByText("Created by the end-to-end test.")).toBeVisible();
 
   await page.goto("/app/pipeline");
-  await page.getByLabel(`Move ${name} to stage`).selectOption({ label: "Qualified" });
+  await page.getByRole("button", { name: `Move ${name} to stage` }).click();
+  await page.getByRole("menuitem", { name: "Qualified" }).click();
   await expect(page.getByRole("region", { name: /^Qualified/ }).getByRole("link", { name })).toBeVisible();
 });
 
 test("lead search escapes filter syntax", async ({ page }) => {
   await openDemo(page);
   await page.goto("/app/leads?q=" + encodeURIComponent("x),id.neq.0,(name"));
-  await expect(page.getByRole("heading", { name: "Leads" })).toBeVisible();
-  await expect(page.getByText("No leads match these filters")).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Contacts" })).toBeVisible();
+  await expect(page.getByText("No contacts match these filters")).toBeVisible();
 });
 
 test("unknown public form links show not found and reveal nothing", async ({ page }) => {
