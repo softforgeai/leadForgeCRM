@@ -3,7 +3,8 @@ import { expect, test, type Page } from "@playwright/test";
 async function openDemo(page: Page) {
   await page.goto("/");
   await page.getByRole("button", { name: "Try the live demo" }).click();
-  await expect(page).toHaveURL(/\/app$/);
+  // Generous timeout: the first request on a serverless host can be a cold start.
+  await expect(page).toHaveURL(/\/app$/, { timeout: 20_000 });
 }
 
 test("landing page explains the product", async ({ page }) => {
