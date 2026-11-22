@@ -19,8 +19,8 @@ jobs:
     env:
       # Placeholders so the build can run without real secrets.
       NEXT_PUBLIC_SUPABASE_URL: https://placeholder.supabase.co
-      NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: sb_publishable_placeholder_for_ci_build
-      SUPABASE_SECRET_KEY: sb_secret_placeholder_for_ci_build_only
+      NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: placeholder-publishable-key-for-ci
+      SUPABASE_SECRET_KEY: placeholder-secret-key-for-ci-build
       IP_HASH_SALT: ci-placeholder-salt-value
     steps:
       - uses: actions/checkout@v4

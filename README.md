@@ -86,8 +86,24 @@ Auth, RLS) · Zod · Vitest · Playwright · GitHub Actions
 
 ## Deployment
 
-Works on Vercel or Netlify. Set the same environment variables as `.env.local`, with `NEXT_PUBLIC_SITE_URL`
-set to the production URL. Then:
+### Netlify
+
+`netlify.toml` pins the build command and Node version; Netlify applies its Next.js adapter automatically.
+
+1. **Add new site → Import an existing project →** pick this repository. Keep the detected settings.
+2. **Environment variables** (Site configuration → Environment variables): add every variable from
+   `.env.example`, with `NEXT_PUBLIC_SITE_URL` set to the Netlify URL (for example
+   `https://leadforge-crm.netlify.app`). Mark `SUPABASE_SECRET_KEY`, `IP_HASH_SALT` and `DEMO_PASSWORD` as secret.
+3. **Deploy.** If you change `NEXT_PUBLIC_*` values later, redeploy, because they're baked in at build time.
+4. **Supabase → Authentication → URL configuration:** set the Site URL to the Netlify URL and add
+   `https://<your-site>.netlify.app/auth/confirm**` to the redirect URLs.
+
+The `NEXT_PUBLIC_*` values are excluded from Netlify's secrets scanning because they're public by design;
+the server-only secrets are still scanned.
+
+### After deploying
+
+Set the same environment variables on any host, with `NEXT_PUBLIC_SITE_URL` set to the production URL. Then:
 
 - add `TEST_SUPABASE_URL`, `TEST_SUPABASE_PUBLISHABLE_KEY` and `TEST_SUPABASE_SECRET_KEY` repository secrets
   so CI runs the database security tests against a **test** project;
