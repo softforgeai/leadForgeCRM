@@ -8,7 +8,7 @@ numbers on one dashboard.
 > engagement. We built it with AI-accelerated engineering and held it to the standards we apply to client work.
 > All demo data is fictional.
 
-**Live demo:** _add URL after deploy_ · **Walkthrough video:** _add URL_
+**Live demo:** [crm.softforgeai.com](https://crm.softforgeai.com) (one-click demo login, fictional data)
 
 ## Features
 
