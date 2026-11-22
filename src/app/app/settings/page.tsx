@@ -1,126 +1,43 @@
-import { Alert, Badge, Card, PageTitle } from "@/components/ui";
-import { ROLE_LABEL } from "@/components/app/Sidebar";
+import { Avatar, Badge } from "@/components/ui";
 import { requireWorkspace } from "@/lib/auth";
-import { getMembers, getStages } from "@/lib/data";
-import { publicEnv } from "@/lib/env";
-import { createClient } from "@/lib/supabase/server";
-import {
-  CopyField,
-  InviteForm,
-  MemberRow,
-  PendingInvite,
-  RegenerateFormLink,
-  StageEditor,
-  WorkspaceForm,
-} from "./SettingsForms";
+import { formatDate } from "@/lib/format";
+import { SettingsSection } from "./SettingsSection";
+import { WorkspaceForm } from "./SettingsForms";
 
-export const metadata = { title: "Settings" };
+export const metadata = { title: "General settings" };
 
-export default async function SettingsPage() {
+const ROLE_LABEL = { owner: "Owner", admin: "Admin", rep: "Sales rep" } as const;
+
+export default async function GeneralSettingsPage() {
   const ctx = await requireWorkspace();
-  const [members, stages] = await Promise.all([getMembers(ctx.workspace.id), getStages(ctx.workspace.id)]);
-
-  let invitations: { id: string; email: string; role: "owner" | "admin" | "rep"; token: string; expires_at: string }[] = [];
-  if (ctx.isManager) {
-    const supabase = await createClient();
-    const { data } = await supabase
-      .from("invitations")
-      .select("id, email, role, token, expires_at")
-      .eq("workspace_id", ctx.workspace.id)
-      .is("accepted_at", null)
-      .gt("expires_at", new Date().toISOString())
-      .order("created_at", { ascending: false });
-    invitations = data ?? [];
-  }
-
-  const site = publicEnv.NEXT_PUBLIC_SITE_URL;
-  const formUrl = `${site}/f/${ctx.workspace.form_token}`;
-  const embed = `<iframe src="${formUrl}?embed=1" title="Contact form" width="100%" height="560" style="border:0"></iframe>`;
-  const locked = ctx.workspace.is_demo;
-  const canEdit = ctx.isManager && !locked;
+  const canEdit = ctx.isManager && !ctx.workspace.is_demo;
 
   return (
-    <div className="mx-auto max-w-3xl space-y-6">
-      <PageTitle title="Settings" description={ctx.workspace.name} />
-      {locked && <Alert tone="warning">Workspace settings are read-only in the demo.</Alert>}
-      {!ctx.isManager && <Alert tone="neutral">Only owners and admins can change workspace settings.</Alert>}
+    <>
+      <SettingsSection title="Workspace profile" description="Your company's name and logo, shown to everyone on your team." flush>
+        <WorkspaceForm name={ctx.workspace.name} logoUrl={ctx.workspace.logo_url ?? ""} disabled={!canEdit} />
+      </SettingsSection>
 
-      {ctx.isManager && (
-        <Section title="Workspace">
-          <WorkspaceForm name={ctx.workspace.name} logoUrl={ctx.workspace.logo_url ?? ""} disabled={!canEdit} />
-        </Section>
-      )}
-
-      {ctx.isManager && (
-        <Section
-          title="Lead capture form"
-          description="Share this link or embed the form on your website. Submissions are added to your first stage."
-        >
-          <div className="space-y-4">
-            <CopyField label="Form link" value={formUrl} />
-            <CopyField label="Embed code" value={embed} multiline />
-            {canEdit && <RegenerateFormLink />}
+      <SettingsSection title="Your account" description="How you appear to your teammates in this workspace.">
+        <div className="flex items-center gap-4">
+          <Avatar name={ctx.member.display_name} className="size-12 text-base" />
+          <div className="min-w-0 flex-1">
+            <p className="font-medium">{ctx.member.display_name}</p>
+            <p className="truncate text-sm text-muted">{ctx.member.email}</p>
           </div>
-        </Section>
-      )}
-
-      <Section title="Pipeline stages">
-        <StageEditor stages={stages.map(({ id, name, kind }) => ({ id, name, kind }))} disabled={!canEdit} />
-      </Section>
-
-      <Section title="Team" description={`${members.length} ${members.length === 1 ? "member" : "members"}`}>
-        <ul className="divide-y divide-line">
-          {members.map((m) =>
-            canEdit && m.role !== "owner" && m.user_id !== ctx.userId ? (
-              <MemberRow key={m.user_id} userId={m.user_id} name={m.display_name} email={m.email} role={m.role} />
-            ) : (
-              <li key={m.user_id} className="flex items-center justify-between gap-3 py-3">
-                <div className="min-w-0">
-                  <p className="truncate text-sm font-medium">
-                    {m.display_name}
-                    {m.user_id === ctx.userId && <span className="ml-1.5 text-xs text-subtle">(you)</span>}
-                  </p>
-                  <p className="truncate text-xs text-muted">{m.email}</p>
-                </div>
-                <Badge>{ROLE_LABEL[m.role]}</Badge>
-              </li>
-            ),
-          )}
-        </ul>
-
-        {canEdit && (
-          <div className="mt-6 border-t border-line pt-6">
-            <h3 className="text-sm font-semibold">Invite a teammate</h3>
-            <p className="mt-1 text-sm text-muted">
-              You&apos;ll get a link to send them. It works only for the email you enter and expires in 7 days.
-            </p>
-            <InviteForm />
-            {invitations.length > 0 && (
-              <ul className="mt-6 space-y-3">
-                {invitations.map((inv) => (
-                  <PendingInvite
-                    key={inv.id}
-                    id={inv.id}
-                    email={inv.email}
-                    role={ROLE_LABEL[inv.role]}
-                    link={`${site}/invite/${inv.token}`}
-                  />
-                ))}
-              </ul>
-            )}
+          <Badge tone={ctx.role === "owner" ? "accent" : "neutral"}>{ROLE_LABEL[ctx.role]}</Badge>
+        </div>
+        <dl className="mt-5 grid gap-4 border-t border-line pt-5 text-sm sm:grid-cols-2">
+          <div>
+            <dt className="text-subtle">Member since</dt>
+            <dd className="mt-0.5 font-medium">{formatDate(ctx.member.created_at)}</dd>
           </div>
-        )}
-      </Section>
-    </div>
-  );
-}
-
-function Section({ title, description, children }: { title: string; description?: string; children: React.ReactNode }) {
-  return (
-    <Card className="p-5 sm:p-6">
-      <h2 className="font-semibold">{title}</h2>
-      {description && <p className="mt-1 text-sm text-muted">{description}</p>}
-      <div className="mt-5">{children}</div>
-    </Card>
+          <div>
+            <dt className="text-subtle">Workspaces you belong to</dt>
+            <dd className="mt-0.5 font-medium">{ctx.memberships.length}</dd>
+          </div>
+        </dl>
+      </SettingsSection>
+    </>
   );
 }

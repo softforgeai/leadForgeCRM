@@ -58,6 +58,13 @@ test("unknown public form links show not found and reveal nothing", async ({ pag
   await expect(page.getByRole("button", { name: "Send message" })).toHaveCount(0);
 });
 
+test("public icons and share image are served to signed-out visitors", async ({ request }) => {
+  for (const path of ["/icon.svg", "/apple-icon", "/opengraph-image", "/manifest.webmanifest"]) {
+    const res = await request.get(path, { maxRedirects: 0 });
+    expect(res.status(), path).toBe(200);
+  }
+});
+
 test("security headers are set", async ({ request }) => {
   const res = await request.get("/");
   expect(res.headers()["x-frame-options"]).toBe("DENY");

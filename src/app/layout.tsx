@@ -7,9 +7,19 @@ const geistSans = Geist({ variable: "--font-geist-sans", subsets: ["latin"] });
 const geistMono = Geist_Mono({ variable: "--font-geist-mono", subsets: ["latin"] });
 
 export const metadata: Metadata = {
+  // Makes the generated share image and icon URLs absolute.
+  metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000"),
   title: { default: "LeadForge: a simple CRM for small service businesses", template: "%s · LeadForge" },
   description:
     "Track leads, run your pipeline, and never miss a follow-up. A SoftForge AI showcase project built to production standards.",
+  applicationName: "LeadForge",
+  openGraph: {
+    type: "website",
+    siteName: "LeadForge",
+    title: "LeadForge: a simple CRM for small service businesses",
+    description: "Pipeline, follow-ups and website leads in one place. Try the live demo, no sign-up needed.",
+  },
+  twitter: { card: "summary_large_image" },
 };
 
 export const viewport: Viewport = {

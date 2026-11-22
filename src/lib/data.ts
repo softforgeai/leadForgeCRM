@@ -210,6 +210,16 @@ export async function getUpcomingFollowUps(workspaceId: string, userId: string, 
   return data as FollowUpWithLead[];
 }
 
+/** Number of deals per stage (the caller's visible deals only, via RLS). */
+export async function getStageCounts(workspaceId: string): Promise<Map<string, number>> {
+  const supabase = await createClient();
+  const { data, error } = await supabase.rpc("lead_stats", { p_workspace: workspaceId });
+  if (error) throw error;
+  const counts = new Map<string, number>();
+  for (const r of data ?? []) counts.set(r.stage_id, (counts.get(r.stage_id) ?? 0) + Number(r.lead_count));
+  return counts;
+}
+
 export async function getDashboardData(workspaceId: string) {
   const supabase = await createClient();
   const [stages, statsRes, board] = await Promise.all([

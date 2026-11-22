@@ -44,7 +44,7 @@ export function ButtonLink({
 }
 
 const fieldBase =
-  "w-full rounded-lg border border-line-strong bg-surface px-3 text-sm text-fg placeholder:text-subtle transition focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/20 aria-[invalid=true]:border-danger";
+  "w-full rounded-lg border border-line-strong bg-surface px-3 text-sm text-fg placeholder:text-subtle transition focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/20 aria-[invalid=true]:border-danger disabled:cursor-not-allowed disabled:border-line disabled:bg-surface-2 disabled:text-muted";
 
 export function Input({ className, ...props }: ComponentProps<"input">) {
   return <input className={cn(fieldBase, "h-10", className)} {...props} />;

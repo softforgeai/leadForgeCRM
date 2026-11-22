@@ -2,6 +2,7 @@ import Link from "next/link";
 import { ChevronsUpDown, LogOut } from "lucide-react";
 import { signOut } from "@/app/(auth)/actions";
 import { switchWorkspace } from "@/app/app/actions/workspace";
+import { LogoMark } from "@/components/LogoMark";
 import type { WorkspaceContext } from "@/lib/auth";
 import { NavLinks } from "./NavLinks";
 
@@ -9,12 +10,8 @@ export const ROLE_LABEL = { owner: "Owner", admin: "Admin", rep: "Sales rep" } a
 
 function SidebarLogo() {
   return (
-    <Link href="/app" className="flex items-center gap-2.5 px-1 font-semibold tracking-tight text-sidebar-fg">
-      <svg aria-hidden viewBox="0 0 24 24" className="size-7">
-        <rect width="24" height="24" rx="6" className="fill-accent" />
-        <path d="M7 6v12h10" stroke="white" strokeWidth="2.4" fill="none" strokeLinecap="round" strokeLinejoin="round" />
-        <path d="M11 13l3-3 3 3" stroke="white" strokeWidth="2" fill="none" strokeLinecap="round" strokeLinejoin="round" />
-      </svg>
+    <Link href="/app" className="flex items-center gap-2.5 px-1 text-[17px] font-semibold tracking-tight text-sidebar-fg">
+      <LogoMark />
       LeadForge
     </Link>
   );

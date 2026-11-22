@@ -31,7 +31,10 @@ export async function proxy(request: NextRequest) {
   const signedIn = Boolean(data?.claims?.sub);
   const { pathname } = request.nextUrl;
 
-  if (!signedIn && (pathname.startsWith("/app") || pathname.startsWith("/onboarding"))) {
+  // Match whole path segments: a plain startsWith("/app") would also catch
+  // public files such as /apple-icon.
+  const isPrivate = ["/app", "/onboarding"].some((p) => pathname === p || pathname.startsWith(`${p}/`));
+  if (!signedIn && isPrivate) {
     const url = request.nextUrl.clone();
     url.pathname = "/login";
     url.search = `?next=${encodeURIComponent(pathname)}`;
