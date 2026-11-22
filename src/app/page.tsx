@@ -1,69 +1,108 @@
-import Image from "next/image";
+import Link from "next/link";
+import { BellRing, ChartNoAxesColumn, FileInput, KanbanSquare, ShieldCheck, Users } from "lucide-react";
+import { DemoButton } from "@/components/DemoButton";
+import { Logo } from "@/components/Logo";
+import { ThemeToggle } from "@/components/ThemeToggle";
+import { ButtonLink } from "@/components/ui";
+
+const features = [
+  {
+    icon: KanbanSquare,
+    title: "A pipeline you can see",
+    text: "Drag leads from New to Won on a Kanban board, or work through them in a searchable table.",
+  },
+  {
+    icon: BellRing,
+    title: "Follow-ups that don't slip",
+    text: "Set a follow-up on any lead. Your Today page shows what's overdue and what's due now.",
+  },
+  {
+    icon: FileInput,
+    title: "Leads straight from your website",
+    text: "Embed a simple form on your site. New enquiries land in your pipeline automatically.",
+  },
+  {
+    icon: Users,
+    title: "Built for small teams",
+    text: "Invite your team as admins or sales reps. Reps see only the leads assigned to them.",
+  },
+  {
+    icon: ChartNoAxesColumn,
+    title: "Know your numbers",
+    text: "Pipeline value, win rate, lead sources, and a leaderboard, on one dashboard.",
+  },
+  {
+    icon: ShieldCheck,
+    title: "Secure by design",
+    text: "Every workspace is isolated in the database itself, with tests that prove it.",
+  },
+];
 
 export default function Home() {
   return (
-    <div className="flex flex-col flex-1 items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex flex-1 w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
-        <Image
-          className="dark:invert h-5 w-[100px]"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
-        />
-        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
-            To get started, edit the{" "}
-            <code className="rounded bg-black/[.06] px-1.5 py-0.5 font-mono text-[0.9em] dark:bg-white/[.08]">
-              page.tsx
-            </code>{" "}
-            file.
-          </h1>
-          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Learning
-            </a>{" "}
-            center.
+    <div className="flex min-h-dvh flex-col">
+      <header className="mx-auto flex w-full max-w-6xl items-center justify-between px-4 py-5 sm:px-8">
+        <Logo />
+        <nav className="flex items-center gap-1 sm:gap-2">
+          <ThemeToggle />
+          <ButtonLink href="/login" variant="ghost" size="sm">
+            Sign in
+          </ButtonLink>
+          <ButtonLink href="/signup" size="sm">
+            Get started
+          </ButtonLink>
+        </nav>
+      </header>
+
+      <main className="flex-1">
+        <section className="mx-auto max-w-6xl px-4 pb-16 pt-12 text-center sm:px-8 sm:pt-20">
+          <p className="mx-auto inline-flex rounded-full border border-line bg-surface px-3 py-1 text-xs text-muted">
+            For agencies, clinics, contractors and other service businesses
           </p>
-        </div>
-        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
-          <a
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert h-[14px] w-4"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={14}
-            />
-            Deploy Now
-          </a>
-          <a
-            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Documentation
-          </a>
-        </div>
+          <h1 className="mx-auto mt-6 max-w-3xl text-4xl font-semibold tracking-tight text-balance sm:text-6xl">
+            Stop losing leads in spreadsheets.
+          </h1>
+          <p className="mx-auto mt-5 max-w-xl text-lg text-pretty text-muted">
+            LeadForge keeps every enquiry, conversation and follow-up in one place, so your team always knows who to
+            call next.
+          </p>
+          <div className="mt-9 flex flex-col items-center justify-center gap-3 sm:flex-row">
+            <ButtonLink href="/signup" className="w-full sm:w-auto">
+              Create a free workspace
+            </ButtonLink>
+            <DemoButton className="w-full sm:w-auto" />
+          </div>
+          <p className="mt-3 text-xs text-subtle">The demo opens a sample workspace with fictional data. No sign-up needed.</p>
+        </section>
+
+        <section aria-labelledby="features" className="mx-auto max-w-6xl px-4 pb-24 sm:px-8">
+          <h2 id="features" className="sr-only">
+            Features
+          </h2>
+          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            {features.map(({ icon: Icon, title, text }) => (
+              <div key={title} className="rounded-xl border border-line bg-surface p-6">
+                <Icon aria-hidden className="size-5 text-accent-text" />
+                <h3 className="mt-4 font-semibold">{title}</h3>
+                <p className="mt-1.5 text-sm leading-relaxed text-muted">{text}</p>
+              </div>
+            ))}
+          </div>
+        </section>
       </main>
+
+      <footer className="border-t border-line">
+        <div className="mx-auto flex max-w-6xl flex-col gap-2 px-4 py-6 text-sm text-muted sm:flex-row sm:justify-between sm:px-8">
+          <p>
+            A showcase project by{" "}
+            <Link href="https://softforgeai.com" className="font-medium text-fg hover:underline">
+              SoftForge AI
+            </Link>
+            . Demo data is fictional.
+          </p>
+          <p>Built with Next.js, Supabase and Postgres row-level security.</p>
+        </div>
+      </footer>
     </div>
   );
 }
