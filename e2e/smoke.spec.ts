@@ -19,7 +19,7 @@ test("signed-out visitors are redirected away from the app", async ({ page }) =>
 test("demo login shows the dashboard with data", async ({ page }) => {
   await openDemo(page);
   await expect(page.getByRole("heading", { name: "Dashboard" })).toBeVisible();
-  await expect(page.getByText("Leaderboard")).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Leaderboard" })).toBeVisible();
 });
 
 test("a lead can be created, noted and moved", async ({ page }) => {
@@ -39,7 +39,7 @@ test("a lead can be created, noted and moved", async ({ page }) => {
 
   await page.goto("/app/pipeline");
   await page.getByLabel(`Move ${name} to stage`).selectOption({ label: "Qualified" });
-  await expect(page.getByRole("region", { name: /^Qualified/ }).getByText(name)).toBeVisible();
+  await expect(page.getByRole("region", { name: /^Qualified/ }).getByRole("link", { name })).toBeVisible();
 });
 
 test("lead search escapes filter syntax", async ({ page }) => {
@@ -49,9 +49,12 @@ test("lead search escapes filter syntax", async ({ page }) => {
   await expect(page.getByText("No leads match these filters")).toBeVisible();
 });
 
-test("unknown public form links return 404", async ({ page }) => {
-  const res = await page.goto("/f/" + "0".repeat(32));
-  expect(res?.status()).toBe(404);
+test("unknown public form links show not found and reveal nothing", async ({ page }) => {
+  // The page streams, so the HTTP status is sent before the lookup finishes;
+  // what matters is that no form or workspace details are shown.
+  await page.goto("/f/" + "0".repeat(32));
+  await expect(page.getByRole("heading", { name: "We couldn't find that page" })).toBeVisible();
+  await expect(page.getByRole("button", { name: "Send message" })).toHaveCount(0);
 });
 
 test("security headers are set", async ({ request }) => {

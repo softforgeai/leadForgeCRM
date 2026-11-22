@@ -161,7 +161,7 @@ async function main() {
       updated_at: new Date(createdAt.getTime() + rand() * (now - createdAt.getTime())).toISOString(),
     });
   }
-  const { data: inserted, error: leadError } = await db.from("leads").insert(leads).select("id, stage_id, assigned_to, created_at");
+  const { data: inserted, error: leadError } = await db.from("leads").insert(leads, { defaultToNull: false }).select("id, stage_id, assigned_to, created_at");
   if (leadError) throw leadError;
 
   // The insert trigger logged "created" with no actor; attribute it to the owner and backdate it.
@@ -204,6 +204,7 @@ async function main() {
         actor_id: actor,
         type,
         body: type === "call" ? pick(CALL_NOTES) : type === "email" ? pick(EMAIL_NOTES) : pick(NOTES),
+        meta: {},
         created_at: new Date(start + span * rand()).toISOString(),
       });
     }
@@ -232,9 +233,11 @@ async function main() {
     });
   }
 
-  const { error: actError } = await db.from("activities").insert(activities);
+  // defaultToNull: false makes fields missing from some rows use the column
+  // default instead of NULL in bulk inserts.
+  const { error: actError } = await db.from("activities").insert(activities, { defaultToNull: false });
   if (actError) throw actError;
-  const { error: fuError } = await db.from("follow_ups").insert(followUps);
+  const { error: fuError } = await db.from("follow_ups").insert(followUps, { defaultToNull: false });
   if (fuError) throw fuError;
 
   console.log(

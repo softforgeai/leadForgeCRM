@@ -1,6 +1,7 @@
 import "server-only";
 import { createServerClient } from "@supabase/ssr";
 import { cookies } from "next/headers";
+import { connection } from "next/server";
 import type { Database } from "@/lib/database.types";
 import { publicEnv } from "@/lib/env";
 
@@ -9,6 +10,9 @@ import { publicEnv } from "@/lib/env";
  * Acts as the signed-in user, so every query is filtered by RLS.
  */
 export async function createClient() {
+  // Marks the caller as request-time work. Supabase auth (and our own date
+  // logic) reads the clock, which Cache Components forbids during prerender.
+  await connection();
   const cookieStore = await cookies();
 
   return createServerClient<Database>(
