@@ -18,6 +18,11 @@ if (!url || !secret || !demoEmail || !demoPassword) {
   process.exit(1);
 }
 
+if (new URL(url).pathname.replace(/\/$/, "") !== "") {
+  console.error("NEXT_PUBLIC_SUPABASE_URL must be the base project URL (https://<ref>.supabase.co), without /rest/v1");
+  process.exit(1);
+}
+
 const db = createClient(url, secret, { auth: { persistSession: false, autoRefreshToken: false } });
 
 // Deterministic pseudo-random numbers so every reset produces the same data.
@@ -132,7 +137,8 @@ async function main() {
     let name = `${pick(FIRST)} ${pick(LAST)}`;
     while (usedNames.has(name)) name = `${pick(FIRST)} ${pick(LAST)}`;
     usedNames.add(name);
-    const company = `${pick(COMPANY_A)} ${pick(COMPANY_B)}`;
+    const featured = ["Northwind Dental", "Bluepeak Roofing"];
+    const company = featured[i] ?? `${pick(COMPANY_A)} ${pick(COMPANY_B)}`;
     let r = rand() * stageWeights.reduce((a, b) => a + b, 0);
     let stageIdx = 0;
     while (r > stageWeights[stageIdx]!) r -= stageWeights[stageIdx++]!;
