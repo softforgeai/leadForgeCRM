@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { Search } from "lucide-react";
-import { Badge, Card, EmptyState, Input, PageTitle, Select, buttonClass } from "@/components/ui";
+import { FilterForm, FilterPending, FilterResults, FilterScope } from "@/components/filters";
+import { Badge, Card, EmptyState, Input, PageTitle, Select } from "@/components/ui";
 import { getOrganizations, type OrgSort } from "@/lib/admin-data";
 import { formatDate, formatMoney, formatRelative } from "@/lib/format";
 
@@ -23,10 +24,10 @@ export default async function OrganizationsPage({ searchParams }: PageProps<"/ad
   const orgs = await getOrganizations({ q, sort, showDemo });
 
   return (
-    <div className="space-y-5">
+    <FilterScope className="space-y-5">
       <PageTitle title="Organizations" description={`${orgs.length} ${orgs.length === 1 ? "organization" : "organizations"}`} />
 
-      <form method="get" role="search" className="flex flex-col gap-2 sm:flex-row sm:items-center">
+      <FilterForm className="flex flex-col gap-2 sm:flex-row sm:items-center">
         <div className="relative flex-1 sm:max-w-sm">
           <label htmlFor="org-q" className="sr-only">
             Search organizations
@@ -47,11 +48,10 @@ export default async function OrganizationsPage({ searchParams }: PageProps<"/ad
         <label className="flex items-center gap-2 px-1 text-sm text-muted">
           <input type="checkbox" name="demo" value="1" defaultChecked={showDemo} className="size-4" /> Include demo
         </label>
-        <button type="submit" className={buttonClass("secondary")}>
-          Apply
-        </button>
-      </form>
+        <FilterPending />
+      </FilterForm>
 
+      <FilterResults>
       {orgs.length === 0 ? (
         <EmptyState title="No organizations found" description="Try a different search." />
       ) : (
@@ -104,6 +104,7 @@ export default async function OrganizationsPage({ searchParams }: PageProps<"/ad
           </table>
         </Card>
       )}
-    </div>
+      </FilterResults>
+    </FilterScope>
   );
 }

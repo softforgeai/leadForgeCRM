@@ -284,3 +284,128 @@ export async function getSupportSessions(limit = 25) {
   if (error) throw error;
   return data ?? [];
 }
+
+// ------------------------------------------------------------------- users
+
+export const USER_PAGE_SIZE = 50;
+export const USER_STATUSES = ["active", "inactive", "never", "unconfirmed", "no_workspace", "admin"] as const;
+export const USER_SORTS = ["created", "last_sign_in", "name", "email"] as const;
+const MEMBER_ROLES = ["owner", "admin", "rep"] as const;
+
+export type UserFilters = {
+  q?: string;
+  workspace?: string;
+  role?: (typeof MEMBER_ROLES)[number];
+  status?: (typeof USER_STATUSES)[number];
+  sort: (typeof USER_SORTS)[number];
+  demo: boolean;
+  page: number;
+};
+
+export type UserMembership = {
+  workspace_id: string;
+  workspace_name: string;
+  role: (typeof MEMBER_ROLES)[number];
+  display_name: string;
+  is_demo: boolean;
+  joined_at: string;
+};
+
+export function parseUserFilters(sp: Record<string, string | string[] | undefined>): UserFilters {
+  const one = (k: string) => (typeof sp[k] === "string" ? (sp[k] as string) : undefined);
+  const pick = <T extends readonly string[]>(list: T, v?: string) =>
+    (list as readonly string[]).includes(v ?? "") ? (v as T[number]) : undefined;
+  const workspace = one("workspace");
+  return {
+    q: one("q")?.trim().slice(0, 100) || undefined,
+    workspace: workspace && UUID.test(workspace) ? workspace : undefined,
+    role: pick(MEMBER_ROLES, one("role")),
+    status: pick(USER_STATUSES, one("status")),
+    sort: pick(USER_SORTS, one("sort")) ?? "created",
+    demo: one("demo") === "1",
+    page: Math.max(1, Math.min(10_000, Number(one("page")) || 1)),
+  };
+}
+
+export async function getUsers(f: UserFilters) {
+  const { db } = await adminDb();
+  const { data, error } = await db.rpc("admin_list_users", {
+    p_q: f.q ?? null,
+    p_workspace: f.workspace ?? null,
+    p_role: f.role ?? null,
+    p_status: f.status ?? null,
+    p_include_demo: f.demo,
+    p_sort: f.sort,
+    p_limit: USER_PAGE_SIZE,
+    p_offset: (f.page - 1) * USER_PAGE_SIZE,
+  });
+  if (error) throw error;
+  const rows = (data ?? []).map((u) => ({ ...u, memberships: (u.memberships ?? []) as unknown as UserMembership[] }));
+  return { rows, total: n(rows[0]?.total_count) };
+}
+
+/** Every organization, for filter dropdowns. */
+export async function getWorkspaceOptions() {
+  const { db } = await adminDb();
+  const { data, error } = await db.from("workspaces").select("id, name, is_demo").order("name").limit(1000);
+  if (error) throw error;
+  return data ?? [];
+}
+
+export async function getUser(id: string) {
+  if (!UUID.test(id)) return null;
+  const { db } = await adminDb();
+  const { data: auth, error } = await db.auth.admin.getUserById(id);
+  if (error || !auth.user) return null;
+  const user = auth.user;
+
+  const [members, admin, tickets, sessions] = await Promise.all([
+    db
+      .from("workspace_members")
+      .select("workspace_id, role, display_name, created_at, workspace:workspaces(id, name, is_demo)")
+      .eq("user_id", id)
+      .order("created_at"),
+    db.from("platform_admins").select("user_id").eq("user_id", id).maybeSingle(),
+    db
+      .from("support_tickets")
+      .select("id, number, subject, status, priority, last_message_at, last_message_by_staff, workspace:workspaces(name)")
+      .eq("created_by", id)
+      .order("last_message_at", { ascending: false })
+      .limit(20),
+    db
+      .from("impersonation_sessions")
+      .select("id, admin_id, workspace_id, reason, started_at, expires_at, ended_at")
+      .eq("target_user_id", id)
+      .order("started_at", { ascending: false })
+      .limit(10),
+  ]);
+  for (const r of [members, admin, tickets, sessions]) if (r.error) throw r.error;
+  const now = Date.now();
+
+  const memberRows = members.data ?? [];
+  const meta = (user.user_metadata ?? {}) as Record<string, unknown>;
+  const metaName = [meta.full_name, meta.name].find((v): v is string => typeof v === "string" && v.trim() !== "");
+  return {
+    user: {
+      id: user.id,
+      email: user.email ?? null,
+      phone: user.phone || null,
+      name: memberRows[0]?.display_name ?? metaName ?? user.email?.split("@")[0] ?? "Unknown user",
+      createdAt: user.created_at,
+      lastSignInAt: user.last_sign_in_at ?? null,
+      emailConfirmedAt: user.email_confirmed_at ?? null,
+      providers: (user.app_metadata?.providers as string[] | undefined) ?? [user.app_metadata?.provider ?? "email"],
+      isSuspended: (() => {
+        const until = (user as { banned_until?: string | null }).banned_until;
+        return Boolean(until && new Date(until).getTime() > now);
+      })(),
+      isPlatformAdmin: Boolean(admin.data),
+    },
+    memberships: memberRows,
+    tickets: tickets.data ?? [],
+    sessions: (sessions.data ?? []).map((s) => ({
+      ...s,
+      state: s.ended_at ? ("ended" as const) : new Date(s.expires_at).getTime() > now ? ("active" as const) : ("expired" as const),
+    })),
+  };
+}

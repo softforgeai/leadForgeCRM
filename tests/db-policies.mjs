@@ -27,7 +27,8 @@ await db.exec(`
   grant usage on schema auth to anon, authenticated, service_role;
   create table auth.users (
     id uuid primary key, email text,
-    created_at timestamptz not null default now(), last_sign_in_at timestamptz
+    created_at timestamptz not null default now(), last_sign_in_at timestamptz,
+    email_confirmed_at timestamptz, raw_user_meta_data jsonb not null default '{}'::jsonb
   );
   create function auth.uid() returns uuid language sql stable as $$
     select nullif(current_setting('request.jwt.claim.sub', true), '')::uuid
@@ -257,6 +258,25 @@ const pstats = await as("service", "select * from public.admin_platform_stats()"
 check("admin platform stats", !pstats.error && Number(pstats.rows[0]?.workspaces) === 2 && Number(pstats.rows[0]?.users) === 5, pstats.error ?? JSON.stringify(pstats.rows));
 const weeks = await as("service", "select * from public.admin_signups_by_week(12)");
 check("signups by week returns 12 weeks", !weeks.error && weeks.rows.length === 12, weeks.error ?? weeks.rows.length);
+// User directory (admin_list_users). rep2 was removed from A above, so A has 2 members.
+check("authenticated cannot call admin_list_users", !!(await as("ownerA", "select * from public.admin_list_users()")).error);
+check("anon cannot call admin_list_users", !!(await as("anon", "select * from public.admin_list_users()")).error);
+const allUsers = await as("service", "select * from public.admin_list_users()");
+check("user directory lists every user with a total", !allUsers.error && allUsers.rows.length === 5 && Number(allUsers.rows[0]?.total_count) === 5, allUsers.error ?? JSON.stringify(allUsers.rows));
+const ownerRow = allUsers.rows.find((r) => r.id === U.ownerA);
+check("user directory includes memberships", Array.isArray(ownerRow?.memberships) && ownerRow.memberships.some((m) => m.workspace_id === wsA && m.role === "owner"), JSON.stringify(ownerRow?.memberships));
+const byEmail = await as("service", "select * from public.admin_list_users(p_q => $1)", ["REP1@example"]);
+check("user search matches email case-insensitively", !byEmail.error && byEmail.rows.length === 1 && byEmail.rows[0].id === U.rep1, byEmail.error ?? JSON.stringify(byEmail.rows));
+const wildcard = await as("service", "select * from public.admin_list_users(p_q => $1)", ["%"]);
+check("user search treats % literally", !wildcard.error && wildcard.rows.length === 0, wildcard.error ?? wildcard.rows.length);
+const inA = await as("service", "select * from public.admin_list_users(p_workspace => $1)", [wsA]);
+check("user filter by workspace", !inA.error && inA.rows.length === 2 && inA.rows.every((r) => r.memberships.some((m) => m.workspace_id === wsA)), inA.error ?? JSON.stringify(inA.rows.map((r) => r.email)));
+const repsA = await as("service", "select * from public.admin_list_users(p_workspace => $1, p_role => 'rep')", [wsA]);
+check("user filter by workspace and role", !repsA.error && repsA.rows.length === 1 && repsA.rows[0].id === U.rep1, repsA.error ?? repsA.rows.length);
+const noWs = await as("service", "select * from public.admin_list_users(p_status => 'no_workspace')");
+check("user filter: no workspace", !noWs.error && noWs.rows.length === 2 && noWs.rows.every((r) => [U.rep2, U.outsider].includes(r.id)), noWs.error ?? JSON.stringify(noWs.rows));
+const paged = await as("service", "select * from public.admin_list_users(p_limit => 2, p_offset => 4)");
+check("user directory paginates", !paged.error && paged.rows.length === 1 && Number(paged.rows[0].total_count) === 5, paged.error ?? paged.rows.length);
 check("existing grants still work after re-grant", !(await as("rep1", "select * from public.lead_stats($1)", [wsA])).error);
 
 console.log(failures === 0 ? "\nAll checks passed." : `\n${failures} check(s) failed.`);

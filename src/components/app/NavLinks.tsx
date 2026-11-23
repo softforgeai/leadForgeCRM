@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { CalendarCheck, FileUp, KanbanSquare, LayoutDashboard, LifeBuoy, Settings, Users } from "lucide-react";
+import { LinkPending } from "@/components/LinkPending";
 import { cn } from "@/lib/cn";
 
 const groups = [
@@ -52,6 +53,7 @@ export function NavLinks({ dueCount }: { dueCount?: number }) {
                     {active && <span aria-hidden className="absolute inset-y-1.5 left-0 w-0.5 rounded-full bg-accent" />}
                     <Icon aria-hidden className={cn("size-4", active ? "text-accent-text dark:text-accent-text" : "")} />
                     <span className="flex-1">{label}</span>
+                    <LinkPending className="text-sidebar-muted" />
                     {href === "/app/today" && dueCount ? (
                       <span className="rounded-full bg-accent px-1.5 py-px text-[11px] font-semibold text-accent-fg">
                         {dueCount > 99 ? "99+" : dueCount}

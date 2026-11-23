@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { ArrowDown, ArrowUp, ChevronsUpDown, Download, KanbanSquare, List, Plus, Search } from "lucide-react";
 import { StagePill } from "@/components/StagePill";
+import { FilterForm, FilterPending, FilterResults, FilterScope } from "@/components/filters";
 import { Avatar, ButtonLink, EmptyState, buttonClass } from "@/components/ui";
 import { requireWorkspace } from "@/lib/auth";
 import { PAGE_SIZE, getLeads, getMembers, getStages, parseLeadFilters, type LeadFilters } from "@/lib/data";
@@ -71,7 +72,7 @@ export default async function ContactsPage({ searchParams }: PageProps<"/app/lea
   const hasFilters = Boolean(filters.q || filters.stage || filters.rep || filters.source || filters.tag);
 
   return (
-    <div className="space-y-4">
+    <FilterScope className="space-y-4">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h1 className="text-xl font-semibold tracking-tight">Contacts</h1>
@@ -92,7 +93,7 @@ export default async function ContactsPage({ searchParams }: PageProps<"/app/lea
               <List aria-hidden className="size-4" /> List
             </span>
           </div>
-          <a href={`/app/leads/export${buildQuery(filters, { page: 1 })}`} className={buttonClass("secondary", "sm")}>
+          <a href={`/app/leads/export${buildQuery(filters, { page: 1 })}`} data-no-progress className={buttonClass("secondary", "sm")}>
             <Download aria-hidden className="size-4" /> Export
           </a>
           <ButtonLink href="/app/leads/new" size="sm">
@@ -103,7 +104,10 @@ export default async function ContactsPage({ searchParams }: PageProps<"/app/lea
 
       <div className="overflow-hidden rounded-xl border border-line bg-surface">
         {/* Filter bar */}
-        <form method="get" role="search" className="flex flex-wrap items-center gap-2 border-b border-line p-3">
+        <FilterForm className="flex flex-wrap items-center gap-2 border-b border-line p-3">
+          {/* Keep the current sort when filters change. */}
+          {filters.sort && filters.sort !== "created" && <input type="hidden" name="sort" value={filters.sort} />}
+          {filters.dir && filters.dir !== "desc" && <input type="hidden" name="dir" value={filters.dir} />}
           <div className="relative min-w-48 flex-1 sm:max-w-72">
             <label htmlFor="q" className="sr-only">
               Search contacts
@@ -160,15 +164,15 @@ export default async function ContactsPage({ searchParams }: PageProps<"/app/lea
             Tag
           </label>
           <input id="tag" name="tag" placeholder="Tag" defaultValue={filters.tag} className={`${filterField} w-28`} />
-          <button type="submit" className={buttonClass("secondary", "sm", "h-9")}>
-            Apply
-          </button>
           {hasFilters && (
             <Link href="/app/leads" className="text-sm text-accent-text hover:underline">
               Clear
             </Link>
           )}
-        </form>
+          <FilterPending className="ml-auto" />
+        </FilterForm>
+
+        <FilterResults>
 
         {leads.length === 0 ? (
           <div className="p-6">
@@ -280,7 +284,8 @@ export default async function ContactsPage({ searchParams }: PageProps<"/app/lea
             )}
           </nav>
         )}
+        </FilterResults>
       </div>
-    </div>
+    </FilterScope>
   );
 }

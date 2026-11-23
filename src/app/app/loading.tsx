@@ -1,15 +1,15 @@
-import { Skeleton } from "@/components/ui";
+import { PanelSkeleton, SkeletonPage, StatGridSkeleton, TableSkeleton, TitleSkeleton } from "@/components/skeletons";
 
 export default function Loading() {
   return (
-    <div className="space-y-6" aria-busy="true" aria-label="Loading">
-      <Skeleton className="h-8 w-48" />
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        {Array.from({ length: 4 }, (_, i) => (
-          <Skeleton key={i} className="h-24" />
-        ))}
+    <SkeletonPage className="space-y-6">
+      <TitleSkeleton actions={1} />
+      <StatGridSkeleton />
+      <div className="grid gap-4 lg:grid-cols-3">
+        <PanelSkeleton lines={6} className="lg:col-span-2" />
+        <PanelSkeleton lines={6} />
       </div>
-      <Skeleton className="h-80" />
-    </div>
+      <TableSkeleton rows={5} cols={4} />
+    </SkeletonPage>
   );
 }

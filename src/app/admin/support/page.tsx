@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { Search } from "lucide-react";
-import { Badge, Card, EmptyState, Input, PageTitle, Select, buttonClass } from "@/components/ui";
+import { FilterForm, FilterPending, FilterResults, FilterScope } from "@/components/filters";
+import { Badge, Card, EmptyState, Input, PageTitle, Select } from "@/components/ui";
 import { getTickets, parseTicketFilters } from "@/lib/admin-data";
 import { formatRelative } from "@/lib/format";
 import {
@@ -23,13 +24,13 @@ export default async function SupportInboxPage({ searchParams }: PageProps<"/adm
   const needsReply = tickets.filter((t) => !t.last_message_by_staff && isOpenStatus(t.status)).length;
 
   return (
-    <div className="space-y-5">
+    <FilterScope className="space-y-5">
       <PageTitle
         title="Support inbox"
         description={`${tickets.length} ${tickets.length === 1 ? "ticket" : "tickets"} · ${needsReply} waiting on us. Tickets that need a reply come first, then by priority.`}
       />
 
-      <form method="get" role="search" className="flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-center">
+      <FilterForm className="flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-center">
         {filters.workspace && <input type="hidden" name="workspace" value={filters.workspace} />}
         <div className="relative flex-1 sm:max-w-sm">
           <label htmlFor="t-q" className="sr-only">
@@ -61,16 +62,15 @@ export default async function SupportInboxPage({ searchParams }: PageProps<"/adm
             </option>
           ))}
         </Select>
-        <button type="submit" className={buttonClass("secondary")}>
-          Apply
-        </button>
         {filters.workspace && (
           <Link href="/admin/support" className="text-sm text-accent-text hover:underline">
             Clear organization filter
           </Link>
         )}
-      </form>
+        <FilterPending />
+      </FilterForm>
 
+      <FilterResults>
       {tickets.length === 0 ? (
         <EmptyState title="No tickets" description="Nothing matches these filters." />
       ) : (
@@ -108,6 +108,7 @@ export default async function SupportInboxPage({ searchParams }: PageProps<"/adm
           </ul>
         </Card>
       )}
-    </div>
+      </FilterResults>
+    </FilterScope>
   );
 }

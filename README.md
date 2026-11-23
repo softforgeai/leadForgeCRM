@@ -24,9 +24,12 @@ numbers on one dashboard.
 - **Help & support.** Every workspace can open support tickets and talk to our team in a threaded
   conversation. Reps see their own tickets; owners and admins see the whole workspace's.
 - **Super-admin panel** (`/admin`, staff only). Platform analytics, every organization with its usage and
-  pipeline, a support inbox with internal notes, and an audit log of every staff action.
+  pipeline, a user directory (search by name or email, filter by organization, role and status), a support
+  inbox with internal notes, and an audit log of every staff action.
 - **Log in as a customer.** Staff can see the app exactly as a customer does to reproduce an issue. Each session
   needs a reason, ends after 60 minutes, shows a banner on every page, and is recorded.
+- **Fast-feeling UI.** A progress bar on every navigation, skeleton screens shaped like each page, and filters
+  that apply as you type without reloading the page.
 - **One-click demo**, dark mode, and responsive layouts throughout.
 
 ## Production standards, and what they protect against
@@ -76,8 +79,8 @@ Auth, RLS) · Zod · Vitest · Playwright · GitHub Actions
    npm run seed:demo   # creates the demo workspace and demo login
    npm run dev
    ```
-6. **Make yourself a platform admin** (optional, for `/admin`). Sign up in the app, then run this in the
-   Supabase SQL editor. There's deliberately no way to do it from the app:
+6. **Make yourself a platform admin** (optional, for `/admin`). There's deliberately no way to do it from the
+   app. Sign up normally, then run this in the Supabase SQL editor:
    ```sql
    insert into public.platform_admins (user_id)
    select id from auth.users where email = 'you@yourcompany.com';

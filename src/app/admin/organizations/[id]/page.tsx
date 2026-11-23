@@ -47,9 +47,14 @@ export default async function OrganizationPage({ params }: PageProps<"/admin/org
             Joined {formatDate(workspace.created_at)} · <span className="font-mono text-xs">{workspace.id}</span>
           </p>
         </div>
-        <Link href={`/admin/support?workspace=${workspace.id}&status=all`} className="text-sm text-accent-text hover:underline">
-          All tickets from this organization
-        </Link>
+        <div className="flex flex-wrap gap-x-4 gap-y-1 text-sm">
+          <Link href={`/admin/users?workspace=${workspace.id}`} className="text-accent-text hover:underline">
+            All users in this organization
+          </Link>
+          <Link href={`/admin/support?workspace=${workspace.id}&status=all`} className="text-accent-text hover:underline">
+            All tickets from this organization
+          </Link>
+        </div>
       </div>
 
       <dl className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
@@ -78,7 +83,9 @@ export default async function OrganizationPage({ params }: PageProps<"/admin/org
                   <Avatar name={m.display_name} className="size-9 text-xs" />
                   <div className="min-w-0">
                     <p className="flex flex-wrap items-center gap-1.5 text-sm font-medium">
-                      {m.display_name}
+                      <Link href={`/admin/users/${m.user_id}`} className="hover:text-accent-text hover:underline">
+                        {m.display_name}
+                      </Link>
                       <Badge tone={m.role === "owner" ? "accent" : "neutral"}>{ROLE_LABEL[m.role]}</Badge>
                       {m.isPlatformAdmin && <Badge tone="warning">Staff</Badge>}
                     </p>

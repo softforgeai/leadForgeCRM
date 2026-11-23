@@ -143,7 +143,7 @@ export function EmptyState({ title, description, action }: { title: string; desc
 }
 
 export function Skeleton({ className }: { className?: string }) {
-  return <div aria-hidden className={cn("animate-pulse rounded-lg bg-surface-2", className)} />;
+  return <div aria-hidden className={cn("animate-pulse rounded-lg bg-line/80", className)} />;
 }
 
 export function Avatar({ name, className }: { name: string; className?: string }) {

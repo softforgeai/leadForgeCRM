@@ -469,6 +469,29 @@ export type Database = {
         Args: { p_users: string[] };
         Returns: { user_id: string; last_sign_in_at: string | null; created_at: string }[];
       };
+      admin_list_users: {
+        Args: {
+          p_q?: string | null;
+          p_workspace?: string | null;
+          p_role?: MemberRole | null;
+          p_status?: string | null;
+          p_include_demo?: boolean;
+          p_sort?: string;
+          p_limit?: number;
+          p_offset?: number;
+        };
+        Returns: {
+          id: string;
+          email: string | null;
+          name: string;
+          created_at: string;
+          last_sign_in_at: string | null;
+          email_confirmed_at: string | null;
+          is_platform_admin: boolean;
+          memberships: Json;
+          total_count: number;
+        }[];
+      };
       is_manager: { Args: { ws: string }; Returns: boolean };
       member_role_in: { Args: { ws: string }; Returns: MemberRole };
     };
