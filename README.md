@@ -21,6 +21,12 @@ numbers on one dashboard.
 - **Website lead form.** A shareable, embeddable form. Submissions land in your pipeline.
 - **CSV import** with per-row validation and a report of skipped rows.
 - **Dashboard.** Open pipeline value, won value, win rate, leads by stage and source, and a leaderboard.
+- **Help & support.** Every workspace can open support tickets and talk to our team in a threaded
+  conversation. Reps see their own tickets; owners and admins see the whole workspace's.
+- **Super-admin panel** (`/admin`, staff only). Platform analytics, every organization with its usage and
+  pipeline, a support inbox with internal notes, and an audit log of every staff action.
+- **Log in as a customer.** Staff can see the app exactly as a customer does to reproduce an issue. Each session
+  needs a reason, ends after 60 minutes, shows a banner on every page, and is recorded.
 - **One-click demo**, dark mode, and responsive layouts throughout.
 
 ## Production standards, and what they protect against
@@ -42,6 +48,7 @@ and real data arrive. This is how LeadForge handles each one.
 | Open redirects after login | `?next=` only accepts local paths | `src/lib/helpers.test.ts` |
 | Raw database errors shown to users | Only known, user-facing messages pass through; the rest are logged | `src/lib/action-result.ts` |
 | Clickjacking and missing security headers | CSP, `X-Frame-Options`, HSTS and more; only the lead form can be embedded | `next.config.ts`, `e2e/smoke.spec.ts` |
+| "Log in as" tools that leak access | Admin list nobody can write to from the app; required reason, 60-minute expiry, banner on every page, audit log; ending a session revokes only that session | `tests/db-policies.mjs`, `src/lib/impersonation.ts` |
 | No tests, no CI | Unit, database-security and end-to-end tests; CI on every pull request | `.github/workflows/ci.yml` |
 | No way to tell if production is up | `/api/health` checks the app and the database | `src/app/api/health/route.ts` |
 
@@ -54,8 +61,8 @@ Auth, RLS) · Zod · Vitest · Playwright · GitHub Actions
 
 1. **Create a Supabase project** at [supabase.com](https://supabase.com). Use a separate project for
    development and testing.
-2. **Apply the schema.** Either paste `supabase/migrations/20261122000000_init.sql` into the Supabase SQL
-   editor, or with the CLI:
+2. **Apply the schema.** Either paste each file in `supabase/migrations/` into the Supabase SQL editor, in
+   order, or with the CLI:
    ```bash
    npx supabase link --project-ref <your-project-ref>
    npx supabase db push
@@ -68,6 +75,12 @@ Auth, RLS) · Zod · Vitest · Playwright · GitHub Actions
    npm install
    npm run seed:demo   # creates the demo workspace and demo login
    npm run dev
+   ```
+6. **Make yourself a platform admin** (optional, for `/admin`). Sign up in the app, then run this in the
+   Supabase SQL editor. There's deliberately no way to do it from the app:
+   ```sql
+   insert into public.platform_admins (user_id)
+   select id from auth.users where email = 'you@yourcompany.com';
    ```
 
 ## Scripts

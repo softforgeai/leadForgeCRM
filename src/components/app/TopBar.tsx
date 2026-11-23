@@ -6,11 +6,19 @@ import type { WorkspaceContext } from "@/lib/auth";
 import { MobileNav } from "./MobileNav";
 import { ROLE_LABEL, SidebarBody } from "./Sidebar";
 
-export function TopBar({ ctx, dueCount }: { ctx: WorkspaceContext; dueCount: number }) {
+export function TopBar({
+  ctx,
+  dueCount,
+  isPlatformAdmin,
+}: {
+  ctx: WorkspaceContext;
+  dueCount: number;
+  isPlatformAdmin?: boolean;
+}) {
   return (
     <header className="flex h-14 shrink-0 items-center gap-3 border-b border-line bg-surface px-3 sm:px-5">
       <MobileNav>
-        <SidebarBody ctx={ctx} dueCount={dueCount} />
+        <SidebarBody ctx={ctx} dueCount={dueCount} isPlatformAdmin={isPlatformAdmin} />
       </MobileNav>
 
       <form action="/app/leads" method="get" role="search" className="relative min-w-0 flex-1 sm:max-w-md">

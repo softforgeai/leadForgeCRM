@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { ChevronsUpDown, LogOut } from "lucide-react";
+import { ChevronsUpDown, LogOut, ShieldCheck } from "lucide-react";
 import { signOut } from "@/app/(auth)/actions";
 import { switchWorkspace } from "@/app/app/actions/workspace";
 import { LogoMark } from "@/components/LogoMark";
@@ -62,7 +62,9 @@ function WorkspaceSwitcher({ ctx }: { ctx: WorkspaceContext }) {
 }
 
 /** Sidebar contents, shared by the desktop sidebar and the mobile slide-over. */
-export function SidebarBody({ ctx, dueCount }: { ctx: WorkspaceContext; dueCount: number }) {
+type SidebarProps = { ctx: WorkspaceContext; dueCount: number; isPlatformAdmin?: boolean };
+
+export function SidebarBody({ ctx, dueCount, isPlatformAdmin }: SidebarProps) {
   return (
     <div className="flex h-full flex-col gap-6 bg-sidebar p-4">
       <SidebarLogo />
@@ -70,6 +72,14 @@ export function SidebarBody({ ctx, dueCount }: { ctx: WorkspaceContext; dueCount
       <nav aria-label="Main" className="scroll-thin min-h-0 flex-1 overflow-y-auto">
         <NavLinks dueCount={dueCount} />
       </nav>
+      {isPlatformAdmin && (
+        <Link
+          href="/admin"
+          className="-mb-3 flex items-center gap-3 rounded-md border-t border-sidebar-line px-3 pt-3 pb-2 text-sm text-sidebar-muted hover:bg-sidebar-hover hover:text-sidebar-fg"
+        >
+          <ShieldCheck aria-hidden className="size-4" /> Super admin
+        </Link>
+      )}
       <form action={signOut} className="border-t border-sidebar-line pt-3">
         <button
           type="submit"
@@ -82,10 +92,10 @@ export function SidebarBody({ ctx, dueCount }: { ctx: WorkspaceContext; dueCount
   );
 }
 
-export function Sidebar({ ctx, dueCount }: { ctx: WorkspaceContext; dueCount: number }) {
+export function Sidebar(props: SidebarProps) {
   return (
     <aside className="hidden w-60 shrink-0 lg:block">
-      <SidebarBody ctx={ctx} dueCount={dueCount} />
+      <SidebarBody {...props} />
     </aside>
   );
 }

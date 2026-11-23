@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { CalendarCheck, FileUp, KanbanSquare, LayoutDashboard, Settings, Users } from "lucide-react";
+import { CalendarCheck, FileUp, KanbanSquare, LayoutDashboard, LifeBuoy, Settings, Users } from "lucide-react";
 import { cn } from "@/lib/cn";
 
 const groups = [
@@ -20,6 +20,7 @@ const groups = [
     items: [
       { href: "/app/import", label: "Import", icon: FileUp },
       { href: "/app/settings", label: "Settings", icon: Settings },
+      { href: "/app/support", label: "Help & support", icon: LifeBuoy },
     ],
   },
 ];

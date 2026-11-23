@@ -27,6 +27,9 @@ const SAFE_DB_MESSAGES = [
   "the owner cannot be removed",
   "member not found",
   "not allowed",
+  "too many tickets today",
+  "too many messages, try again later",
+  "ticket not found",
 ];
 
 export function dbErrorMessage(error: { message?: string; code?: string } | null, fallback: string): string {

@@ -3,6 +3,7 @@
 import { redirect } from "next/navigation";
 import { z } from "zod";
 import { publicEnv } from "@/lib/env";
+import { endSupportSession, readStash } from "@/lib/impersonation";
 import { safeNextPath } from "@/lib/safe-redirect";
 import { serverEnv } from "@/lib/server-env";
 import { createClient } from "@/lib/supabase/server";
@@ -91,6 +92,9 @@ export async function updatePassword(_prev: AuthState, formData: FormData): Prom
 }
 
 export async function signOut() {
+  // During a staff support session, "Sign out" must not sign the customer out
+  // of all their devices: end the support session instead.
+  if (await readStash()) redirect(await endSupportSession());
   const supabase = await createClient();
   await supabase.auth.signOut();
   redirect("/login");

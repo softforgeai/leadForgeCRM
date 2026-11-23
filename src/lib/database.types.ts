@@ -12,6 +12,9 @@ type MemberRole = "owner" | "admin" | "rep";
 type StageKind = "open" | "won" | "lost";
 type LeadSource = "website" | "referral" | "linkedin" | "ads" | "other";
 type ActivityType = "created" | "note" | "call" | "email" | "stage_change" | "assigned" | "follow_up";
+type TicketStatus = "open" | "in_progress" | "waiting_on_customer" | "resolved" | "closed";
+type TicketPriority = "low" | "normal" | "high" | "urgent";
+type TicketCategory = "bug" | "question" | "billing" | "feature_request" | "account" | "other";
 
 export type Database = {
   public: {
@@ -201,7 +204,15 @@ export type Database = {
           created_at?: string;
         };
         Update: Record<string, never>;
-        Relationships: [];
+        Relationships: [
+          {
+            foreignKeyName: "activities_lead_id_fkey";
+            columns: ["lead_id"];
+            isOneToOne: false;
+            referencedRelation: "leads";
+            referencedColumns: ["id"];
+          },
+        ];
       };
       follow_ups: {
         Row: {
@@ -248,6 +259,122 @@ export type Database = {
         Update: Record<string, never>;
         Relationships: [];
       };
+      support_tickets: {
+        Row: {
+          id: string;
+          number: number;
+          workspace_id: string;
+          created_by: string | null;
+          created_by_name: string;
+          created_by_email: string;
+          subject: string;
+          category: TicketCategory;
+          priority: TicketPriority;
+          status: TicketStatus;
+          page_url: string | null;
+          created_at: string;
+          updated_at: string;
+          last_message_at: string;
+          last_message_by_staff: boolean;
+          resolved_at: string | null;
+        };
+        Insert: Record<string, never>;
+        Update: {
+          status?: TicketStatus;
+          priority?: TicketPriority;
+          resolved_at?: string | null;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "support_tickets_workspace_id_fkey";
+            columns: ["workspace_id"];
+            isOneToOne: false;
+            referencedRelation: "workspaces";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      support_messages: {
+        Row: {
+          id: number;
+          ticket_id: string;
+          author_id: string | null;
+          author_name: string;
+          is_staff: boolean;
+          is_internal: boolean;
+          body: string;
+          created_at: string;
+        };
+        Insert: {
+          ticket_id: string;
+          author_id?: string | null;
+          author_name: string;
+          is_staff?: boolean;
+          is_internal?: boolean;
+          body: string;
+        };
+        Update: Record<string, never>;
+        Relationships: [
+          {
+            foreignKeyName: "support_messages_ticket_id_fkey";
+            columns: ["ticket_id"];
+            isOneToOne: false;
+            referencedRelation: "support_tickets";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      platform_admins: {
+        Row: { user_id: string; created_at: string };
+        Insert: { user_id: string };
+        Update: Record<string, never>;
+        Relationships: [];
+      };
+      impersonation_sessions: {
+        Row: {
+          id: string;
+          admin_id: string;
+          target_user_id: string;
+          workspace_id: string | null;
+          reason: string;
+          started_at: string;
+          expires_at: string;
+          ended_at: string | null;
+        };
+        Insert: {
+          admin_id: string;
+          target_user_id: string;
+          workspace_id?: string | null;
+          reason: string;
+          expires_at: string;
+        };
+        Update: { ended_at?: string | null };
+        Relationships: [];
+      };
+      admin_audit_log: {
+        Row: {
+          id: number;
+          actor_id: string | null;
+          actor_email: string | null;
+          action: string;
+          workspace_id: string | null;
+          target_user_id: string | null;
+          ticket_id: string | null;
+          details: Json;
+          created_at: string;
+        };
+        Insert: {
+          actor_id?: string | null;
+          actor_email?: string | null;
+          action: string;
+          workspace_id?: string | null;
+          target_user_id?: string | null;
+          ticket_id?: string | null;
+          details?: Json;
+        };
+        Update: Record<string, never>;
+        Relationships: [];
+      };
     };
     Views: Record<string, never>;
     Functions: {
@@ -286,6 +413,62 @@ export type Database = {
         Returns: undefined;
       };
       is_member: { Args: { ws: string }; Returns: boolean };
+      create_support_ticket: {
+        Args: {
+          p_workspace: string;
+          p_subject: string;
+          p_category: TicketCategory;
+          p_priority: TicketPriority;
+          p_body: string;
+          p_page_url: string | null;
+        };
+        Returns: string;
+      };
+      reply_support_ticket: { Args: { p_ticket: string; p_body: string }; Returns: undefined };
+      resolve_support_ticket: { Args: { p_ticket: string }; Returns: undefined };
+      admin_workspace_overview: {
+        Args: Record<string, never>;
+        Returns: {
+          id: string;
+          name: string;
+          is_demo: boolean;
+          created_at: string;
+          owner_id: string | null;
+          owner_name: string | null;
+          owner_email: string | null;
+          member_count: number;
+          lead_count: number;
+          leads_30d: number;
+          open_value_cents: number;
+          won_value_cents: number;
+          last_activity_at: string | null;
+          open_tickets: number;
+        }[];
+      };
+      admin_platform_stats: {
+        Args: Record<string, never>;
+        Returns: {
+          workspaces: number;
+          workspaces_30d: number;
+          users: number;
+          users_30d: number;
+          active_users_7d: number;
+          leads: number;
+          leads_30d: number;
+          active_workspaces_7d: number;
+          open_tickets: number;
+          urgent_tickets: number;
+          awaiting_reply: number;
+        }[];
+      };
+      admin_signups_by_week: {
+        Args: { p_weeks?: number };
+        Returns: { week_start: string; workspaces: number; users: number }[];
+      };
+      admin_user_activity: {
+        Args: { p_users: string[] };
+        Returns: { user_id: string; last_sign_in_at: string | null; created_at: string }[];
+      };
       is_manager: { Args: { ws: string }; Returns: boolean };
       member_role_in: { Args: { ws: string }; Returns: MemberRole };
     };
@@ -294,6 +477,9 @@ export type Database = {
       stage_kind: StageKind;
       lead_source: LeadSource;
       activity_type: ActivityType;
+      ticket_status: TicketStatus;
+      ticket_priority: TicketPriority;
+      ticket_category: TicketCategory;
     };
     CompositeTypes: Record<string, never>;
   };
@@ -312,3 +498,8 @@ export type FollowUp = Tables<"follow_ups">;
 export type Invitation = Tables<"invitations">;
 export type MemberRoleT = MemberRole;
 export type LeadSourceT = LeadSource;
+export type SupportTicket = Tables<"support_tickets">;
+export type SupportMessage = Tables<"support_messages">;
+export type TicketStatusT = TicketStatus;
+export type TicketPriorityT = TicketPriority;
+export type TicketCategoryT = TicketCategory;

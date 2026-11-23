@@ -25,7 +25,10 @@ await db.exec(`
 
   create schema auth;
   grant usage on schema auth to anon, authenticated, service_role;
-  create table auth.users (id uuid primary key, email text);
+  create table auth.users (
+    id uuid primary key, email text,
+    created_at timestamptz not null default now(), last_sign_in_at timestamptz
+  );
   create function auth.uid() returns uuid language sql stable as $$
     select nullif(current_setting('request.jwt.claim.sub', true), '')::uuid
   $$;
@@ -210,6 +213,51 @@ const rm = await as("ownerA", "select public.remove_member($1, $2)", [wsA, U.rep
 check("owner removes rep2", !rm.error, rm.error);
 const l2 = await as("ownerA", "select assigned_to from public.leads where id = $1", [L.L2]);
 check("rep2's lead becomes unassigned", l2.rows[0]?.assigned_to === null, JSON.stringify(l2));
+
+// Support tickets
+const tk = await as("rep1", "select public.create_support_ticket($1, 'Board will not load', 'bug', 'high', 'Steps: open pipeline', '/app/pipeline') as id", [wsA]);
+check("rep creates support ticket", !tk.error && tk.rows[0]?.id, tk.error);
+const ticket = tk.rows[0]?.id;
+check("outsider cannot create ticket in A", /not allowed/.test((await as("outsider", "select public.create_support_ticket($1, 'Hello there', 'bug', 'low', 'x', null)", [wsA])).error ?? ""));
+check("rep sees own ticket", (await as("rep1", "select id from public.support_tickets")).rows.length === 1);
+check("owner sees workspace tickets", (await as("ownerA", "select id from public.support_tickets where workspace_id = $1", [wsA])).rows.length === 1);
+check("ownerB cannot see A tickets", (await as("ownerB", "select id from public.support_tickets")).rows.length === 0);
+check("ownerB cannot read A messages", (await as("ownerB", "select id from public.support_messages")).rows.length === 0);
+check("ownerB cannot reply to A ticket", /ticket not found/.test((await as("ownerB", "select public.reply_support_ticket($1, 'hi')", [ticket])).error ?? ""));
+check("users cannot change ticket status directly", !!(await as("ownerA", "update public.support_tickets set status = 'closed' where id = $1", [ticket])).error);
+check("users cannot insert ticket directly", !!(await as("rep1", "insert into public.support_tickets (workspace_id, created_by_name, created_by_email, subject) values ($1, 'x', 'x', 'xxxx')", [wsA])).error);
+check("users cannot post as staff", !!(await as("rep1", "insert into public.support_messages (ticket_id, author_name, is_staff, body) values ($1, 'x', true, 'x')", [ticket])).error);
+
+// Staff (server, service role) reply + internal note
+await as("service", "insert into public.support_messages (ticket_id, author_name, is_staff, body) values ($1, 'Support', true, 'Looking into it')", [ticket]);
+await as("service", "insert into public.support_messages (ticket_id, author_name, is_staff, is_internal, body) values ($1, 'Support', true, true, 'secret note')", [ticket]);
+const msgs = await as("rep1", "select body, is_staff from public.support_messages where ticket_id = $1 order by id", [ticket]);
+check("customer sees staff reply but not internal note", msgs.rows.length === 2 && !msgs.rows.some((m) => m.body === "secret note"), JSON.stringify(msgs.rows));
+check("staff reply marks ticket as answered", (await as("service", "select last_message_by_staff from public.support_tickets where id = $1", [ticket])).rows[0]?.last_message_by_staff === true);
+await as("service", "update public.support_tickets set status = 'waiting_on_customer' where id = $1", [ticket]);
+check("customer reply works", !(await as("rep1", "select public.reply_support_ticket($1, 'Still broken')", [ticket])).error);
+const reopened = (await as("service", "select status, last_message_by_staff from public.support_tickets where id = $1", [ticket])).rows[0];
+check("customer reply reopens waiting ticket", reopened?.status === "open" && reopened?.last_message_by_staff === false, JSON.stringify(reopened));
+check("rep resolves own ticket", !(await as("rep1", "select public.resolve_support_ticket($1)", [ticket])).error);
+check("ticket is resolved", (await as("service", "select status from public.support_tickets where id = $1", [ticket])).rows[0]?.status === "resolved");
+check("internal note must be staff", !!(await as("service", "insert into public.support_messages (ticket_id, author_name, is_staff, is_internal, body) values ($1, 'x', false, true, 'x')", [ticket])).error);
+
+// Admin tables and functions are server-only
+for (const t of ["platform_admins", "impersonation_sessions", "admin_audit_log"]) {
+  check(`authenticated cannot read ${t}`, !!(await as("ownerA", `select * from public.${t}`)).error);
+}
+check("user cannot make themselves platform admin", !!(await as("ownerA", "insert into public.platform_admins (user_id) values ($1)", [U.ownerA])).error);
+check("authenticated cannot call admin_workspace_overview", !!(await as("ownerA", "select * from public.admin_workspace_overview()")).error);
+check("authenticated cannot call admin_platform_stats", !!(await as("ownerA", "select * from public.admin_platform_stats()")).error);
+check("authenticated cannot call admin_user_activity", !!(await as("ownerA", "select * from public.admin_user_activity($1)", [[U.ownerB]])).error);
+const overview = await as("service", "select * from public.admin_workspace_overview()");
+const rowA = overview.rows.find((r) => r.id === wsA);
+check("admin overview lists workspaces with counts", !overview.error && overview.rows.length === 2 && Number(rowA?.lead_count) === 3 && rowA?.owner_email === "ownerA@example.com", overview.error ?? JSON.stringify(rowA));
+const pstats = await as("service", "select * from public.admin_platform_stats()");
+check("admin platform stats", !pstats.error && Number(pstats.rows[0]?.workspaces) === 2 && Number(pstats.rows[0]?.users) === 5, pstats.error ?? JSON.stringify(pstats.rows));
+const weeks = await as("service", "select * from public.admin_signups_by_week(12)");
+check("signups by week returns 12 weeks", !weeks.error && weeks.rows.length === 12, weeks.error ?? weeks.rows.length);
+check("existing grants still work after re-grant", !(await as("rep1", "select * from public.lead_stats($1)", [wsA])).error);
 
 console.log(failures === 0 ? "\nAll checks passed." : `\n${failures} check(s) failed.`);
 process.exit(failures ? 1 : 0);
